@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+   xmlns:ex="http://www.example.com#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+>
+  <rdf:Description rdf:about="http://www.example.com#dataFine">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#DatatypeProperty"/>
+    <rdfs:domain rdf:resource="http://www.example.com#EventoRicorrente"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com#haUtente">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#ObjectProperty"/>
+    <rdfs:domain rdf:resource="http://www.example.com#EventoRicorrente"/>
+    <rdfs:range rdf:resource="http://www.example.com#Utente"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com#haOrario">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#ObjectProperty"/>
+    <rdfs:domain rdf:resource="http://www.example.com#EventoRicorrente"/>
+    <rdfs:range rdf:resource="http://www.example.com#Orario"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com#Pizza_orario">
+    <rdfs:label>2025-03-28T21:30 - 2025-03-28T00:30</rdfs:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com#Pizza">
+    <rdfs:label>Pizza</rdfs:label>
+    <rdf:type rdf:resource="http://www.example.com#EventoRicorrente"/>
+    <ex:dataInizio>2025-03-28T21:30</ex:dataInizio>
+    <ex:dataFine>2025-03-28T00:30</ex:dataFine>
+    <ex:haOrario rdf:resource="http://www.example.com#Pizza_orario"/>
+    <ex:haLuogo rdf:resource="http://www.example.com#Terlizzi"/>
+    <ex:haUtente rdf:resource="http://www.example.com#VALERIA"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com#haLuogo">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#ObjectProperty"/>
+    <rdfs:domain rdf:resource="http://www.example.com#EventoRicorrente"/>
+    <rdfs:range rdf:resource="http://www.example.com#Luogo"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com#EventoRicorrente">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class"/>
+    <rdfs:label>Evento Ricorrente</rdfs:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com#dataInizio">
+    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#DatatypeProperty"/>
+    <rdfs:domain rdf:resource="http://www.example.com#EventoRicorrente"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com#Terlizzi">
+    <rdfs:label>Terlizzi</rdfs:label>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com#VALERIA">
+    <rdfs:label>VALERIA</rdfs:label>
+  </rdf:Description>
+</rdf:RDF>
