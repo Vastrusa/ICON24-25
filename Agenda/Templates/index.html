@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Intelligente</title>
+    
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FullCalendar -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'it',
+                events: [
+                    {% for evento in eventi %}
+                    {
+                        title: "{{ evento['titolo'] }}",
+                        start: "{{ evento['data_inizio'] }}",
+                        end: "{{ evento['data_fine'] }}",
+                        priority: "{{ evento['priorita'] }}"
+                    },
+                    {% endfor %}
+                ],
+                dateClick: function(info) {
+                    mostraEventiGiorno(info.dateStr);
+                }
+            });
+            calendar.render();
+        });
+
+        function validateForm() {
+            let titolo = document.forms["eventoForm"]["titolo"].value;
+            let dataInizio = document.forms["eventoForm"]["data_inizio"].value;
+            let dataFine = document.forms["eventoForm"]["data_fine"].value;
+
+            if (!titolo || !dataInizio || !dataFine) {
+                alert("Compila tutti i campi obbligatori!");
+                return false;
+            }
+            return true;
+        }
+
+        function mostraEventiGiorno(data) {
+            let eventi = [
+                {% for evento in eventi %}
+                {
+                    titolo: "{{ evento['titolo'] }}",
+                    dataInizio: "{{ evento['data_inizio'] }}",
+                    dataFine: "{{ evento['data_fine'] }}",
+                    priorita: "{{ evento['priorita'] }}"
+                },
+                {% endfor %}
+            ];
+
+            let eventiFiltrati = eventi.filter(evento => evento.dataInizio.startsWith(data));
+            let contenuto = "<h5>Eventi del " + data + ":</h5>";
+
+            if (eventiFiltrati.length === 0) {
+                contenuto += "<p>Nessun evento</p>";
+            } else {
+                eventiFiltrati.forEach(evento => {
+                    contenuto += `<p><strong>${evento.titolo}</strong> (${evento.priorita})<br>
+                                  Inizio: ${evento.dataInizio} <br>
+                                  Fine: ${evento.dataFine}</p><hr>`;
+                });
+            }
+
+            document.getElementById("modal-body").innerHTML = contenuto;
+            let modal = new bootstrap.Modal(document.getElementById("eventModal"));
+            modal.show();
+        }
+    </script>
+
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <h1 class="text-center">📅 Agenda Intelligente</h1>
+
+        <!-- Calendario -->
+        <div class="card shadow-sm p-4 mt-4">
+            <h2 class="mb-3">Calendario</h2>
+            <div id="calendar"></div>
+        </div>
+
+        <!-- Form per aggiungere un evento -->
+        <div class="card shadow-sm p-4 mt-4">
+            <h2 class="mb-3">Aggiungi un Nuovo Evento</h2>
+            <form name="eventoForm" action="/aggiungi" method="post" onsubmit="return validateForm()">
+                <div class="mb-3">
+                    <label for="titolo" class="form-label">Titolo:</label>
+                    <input type="text" name="titolo" id="titolo" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="data_inizio" class="form-label">Data Inizio:</label>
+                    <input type="datetime-local" name="data_inizio" id="data_inizio" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="data_fine" class="form-label">Data Fine:</label>
+                    <input type="datetime-local" name="data_fine" id="data_fine" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="luogo" class="form-label">Luogo:</label>
+                    <input type="text" name="luogo" id="luogo" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label for="priorita" class="form-label">Priorità:</label>
+                    <select name="priorita" id="priorita" class="form-control">
+                        <option value="Alta">Alta 🔴</option>
+                        <option value="Media">Media 🟠</option>
+                        <option value="Bassa">Bassa 🟢</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Aggiungi Evento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale per visualizzare eventi di un giorno -->
+    <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventModalLabel">Eventi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    <!-- Contenuto eventi qui -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
