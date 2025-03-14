@@ -110,6 +110,11 @@ def salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita, ricorren
     eventi.append(evento)
     salva_eventi(eventi)
 
+# Funzione per eliminare un evento
+def elimina_evento(titolo):
+    eventi = carica_eventi()
+    eventi = [evento for evento in eventi if evento['titolo'] != titolo]
+    salva_eventi(eventi)
 
 # Route per la pagina principale
 @app.route("/")
@@ -132,6 +137,15 @@ def aggiungi_evento():
     salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita, ricorrenza, data_fine_ricorrenza)
 
     # Ritorna alla pagina principale
+    return redirect(url_for("index"))
+
+# Route per eliminare un evento
+@app.route("/elimina", methods=["POST"])
+def elimina():
+    titolo = request.form.get("titolo")
+    elimina_evento(titolo)
+
+ # Ritorna alla pagina principale
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
