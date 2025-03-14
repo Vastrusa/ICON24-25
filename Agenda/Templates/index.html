@@ -26,6 +26,9 @@
                         title: "{{ evento['titolo'] }}",
                         start: "{{ evento['data_inizio'] }}",
                         end: "{{ evento['data_fine'] }}",
+                        priority: "{{ evento['priorita'] }}",
+                        ricorrenza: "{{ evento['ricorrenza'] }}",  
+                        data_fine_ricorrenza: "{{ evento['data_fine_ricorrenza'] }}",
                         color: "{{ 'red' if evento['priorita'] == 'Alta' else 'orange' if evento['priorita'] == 'Media' else 'green' }}",
                         id: "{{ evento['titolo'] }}"
                     }{% if not loop.last %},{% endif %}
@@ -70,20 +73,15 @@
                 contenuto += "<p>Nessun evento in programma</p>";
             } else {
                 eventiFiltrati.forEach(evento => {
-                  let inizio = evento.dataInizio.replace('T', ' ');
-                  let fine = evento.dataFine.replace('T', ' ');
-                  let priorita = "";
-                  if (evento.priorita === "Alta") {
-                      priorita = "Priorità alta";
-                  } else if (evento.priorita === "Media") {
-                      priorita = "Priorità media";
-                  } else {
-                      priorita = "Priorità bassa";
-                  }
-                  contenuto += `<p><strong>${evento.titolo}</strong> (${priorita})<br>
-                                      Inizio: ${inizio} <br>
-                                      Fine: ${fine} <br>
-                                      ${evento.ricorrenza !== 'no' ? 'Ricorrenza: ' + evento.ricorrenza + '<br>' : ''}</p><hr>`;
+                contenuto += `<p><strong>${evento.titolo}</strong> (${evento.priorita})<br>
+                                  Inizio: ${evento.dataInizio} <br>
+                                  Fine: ${evento.dataFine}<br>
+                                  Ricorrenza: ${evento.ricorrenza}<br>
+                                  Data fine ricorrenza: ${evento.data_fine_ricorrenza || 'Nessuna'}</p>
+                                  <form method="post" action="/elimina" onsubmit="return confirm('Sei sicuro di voler eliminare l\'evento?');">
+                                      <input type="hidden" name="titolo" value="${evento.titolo}">
+                                      <button type="submit" class="btn btn-danger btn-sm">Elimina</button>
+                                  </form><hr>`;
                 });
             }
 
