@@ -1,14 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
+import calendar
+from dateutil.relativedelta import relativedelta
 
 app = Flask(__name__)
 
-# Percorso per il file JSON che contiene gli eventi
+#Percorso per il file JSON che contiene gli eventi
 EVENTI_FILE = "eventi.json"
 
-# Funzione per caricare gli eventi dal file JSON
+#Funzione per caricare gli eventi dal file JSON
 def carica_eventi():
     if not os.path.exists(EVENTI_FILE):
         return []
@@ -26,8 +28,67 @@ def carica_eventi():
                 print(f"Errore nel formato della data per l'evento: {evento['titolo']}")
                 evento['data_inizio'] = evento.get('data_inizio', '')
                 evento['data_fine'] = evento.get('data_fine', '')
-        
-        return eventi
+                
+        eventi_espansi = []
+        for evento in eventi:
+            if 'ricorrenza' in evento and evento['ricorrenza'] != 'no' and evento.get('data_fine_ricorrenza'):
+                eventi_espansi.extend(genera_eventi_ricorrenti(evento))
+            else:
+                eventi_espansi.append(evento)
+
+        return eventi_espansi
+def genera_eventi_ricorrenti(evento):
+    eventi_ricorrenti = []
+    data_inizio = evento['data_inizio']
+    data_fine = evento['data_fine']
+    ricorrenza = evento['ricorrenza']
+    data_fine_ricorrenza = datetime.strptime(evento['data_fine_ricorrenza'], "%Y-%m-%dT%H:%M")
+    giorno_mese_iniziale = data_inizio.day
+
+    if ricorrenza == 'giornaliera':
+        i = 1
+        while data_inizio + timedelta(days=i) <= data_fine_ricorrenza:
+            nuova_data_inizio = data_inizio + timedelta(days=i)
+            nuova_data_fine = data_fine + timedelta(days=i)
+            nuovo_evento = evento.copy()
+            nuovo_evento['data_inizio'] = nuova_data_inizio.strftime("%Y-%m-%dT%H:%M")
+            nuovo_evento['data_fine'] = nuova_data_fine.strftime("%Y-%m-%dT%H:%M")
+            eventi_ricorrenti.append(nuovo_evento)
+            i += 1
+    elif ricorrenza == 'settimanale':
+        giorno_settimana_iniziale = data_inizio.weekday()
+        i = 1
+        while data_inizio + timedelta(weeks=i) <= data_fine_ricorrenza:
+            nuova_data_inizio = data_inizio + timedelta(weeks=i)
+            nuova_data_inizio = nuova_data_inizio + timedelta(days=(giorno_settimana_iniziale - nuova_data_inizio.weekday()))
+            nuova_data_fine = data_fine + timedelta(weeks=i)
+            nuova_data_fine = nuova_data_fine + timedelta(days=(giorno_settimana_iniziale - nuova_data_fine.weekday()))
+            if nuova_data_inizio <= data_fine_ricorrenza:
+                nuovo_evento = evento.copy()
+                nuovo_evento['data_inizio'] = nuova_data_inizio.strftime("%Y-%m-%dT%H:%M")
+                nuovo_evento['data_fine'] = nuova_data_fine.strftime("%Y-%m-%dT%H:%M")
+                eventi_ricorrenti.append(nuovo_evento)
+            i += 1
+    elif ricorrenza == 'mensile':
+        nuova_data_inizio = data_inizio
+        nuova_data_fine = data_fine
+        while nuova_data_inizio <= data_fine_ricorrenza:
+            nuovo_evento = evento.copy()
+            nuovo_evento['data_inizio'] = nuova_data_inizio.strftime("%Y-%m-%dT%H:%M")
+            nuovo_evento['data_fine'] = nuova_data_fine.strftime("%Y-%m-%dT%H:%M")
+            eventi_ricorrenti.append(nuovo_evento)
+
+            nuova_data_inizio += relativedelta(months=1)
+            nuova_data_fine += relativedelta(months=1)
+
+            try:
+                nuova_data_inizio = nuova_data_inizio.replace(day=giorno_mese_iniziale)
+                nuova_data_fine = nuova_data_fine.replace(day=giorno_mese_iniziale)
+            except ValueError:
+                nuova_data_inizio = nuova_data_inizio.replace(day=calendar.monthrange(nuova_data_inizio.year, nuova_data_inizio.month)[1])
+                nuova_data_fine = nuova_data_fine.replace(day=calendar.monthrange(nuova_data_fine.year, nuova_data_fine.month)[1])
+
+    return eventi_ricorrenti
 
 # Funzione per salvare gli eventi nel file JSON
 def salva_eventi(eventi):
@@ -35,13 +96,15 @@ def salva_eventi(eventi):
         json.dump(eventi, file, default=str)
 
 # Funzione per salvare un nuovo evento
-def salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita):
+def salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita, ricorrenza, data_fine_ricorrenza):
     evento = {
         'titolo': titolo,
         'data_inizio': datetime.strptime(data_inizio, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M"),
         'data_fine': datetime.strptime(data_fine, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M"),
         'luogo': luogo,
         'priorita': priorita
+        'ricorrenza': ricorrenza,
+        'data_fine_ricorrenza': datetime.strptime(data_fine_ricorrenza, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M") if data_fine_ricorrenza else None        
     }
     eventi = carica_eventi()
     eventi.append(evento)
@@ -63,8 +126,10 @@ def aggiungi_evento():
     data_fine = request.form["data_fine"]
     luogo = request.form["luogo"]
     priorita = request.form["priorita"]
+    ricorrenza = request.form["ricorrenza"]
+    data_fine_ricorrenza = request.form.get("data_fine_ricorrenza")
 
-    salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita)
+    salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita, ricorrenza, data_fine_ricorrenza)
 
     # Ritorna alla pagina principale
     return redirect(url_for("index"))
