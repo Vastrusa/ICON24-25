@@ -102,7 +102,7 @@ def salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita, ricorren
         'data_inizio': datetime.strptime(data_inizio, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M"),
         'data_fine': datetime.strptime(data_fine, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M"),
         'luogo': luogo,
-        'priorita': priorita
+        'priorita': priorita,
         'ricorrenza': ricorrenza,
         'data_fine_ricorrenza': datetime.strptime(data_fine_ricorrenza, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M") if data_fine_ricorrenza else None        
     }
