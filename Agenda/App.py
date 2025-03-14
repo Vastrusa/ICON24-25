@@ -34,12 +34,12 @@ def salva_eventi(eventi):
     with open(EVENTI_FILE, "w") as file:
         json.dump(eventi, file, default=str)
 
-# Funzione per aggiungere un evento
-def aggiungi_evento(titolo, data_inizio, data_fine, luogo, priorita):
+# Funzione per salvare un nuovo evento
+def salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita):
     evento = {
         'titolo': titolo,
-        'data_inizio': data_inizio.strftime("%Y-%m-%dT%H:%M"),
-        'data_fine': data_fine.strftime("%Y-%m-%dT%H:%M"),
+        'data_inizio': datetime.strptime(data_inizio, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M"),
+        'data_fine': datetime.strptime(data_fine, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M"),
         'luogo': luogo,
         'priorita': priorita
     }
@@ -47,9 +47,10 @@ def aggiungi_evento(titolo, data_inizio, data_fine, luogo, priorita):
     eventi.append(evento)
     salva_eventi(eventi)
 
+
 # Route per la pagina principale
 @app.route("/")
-def index()
+def index():
     eventi = carica_eventi()  
     # Passa gli eventi al template
     return render_template("index.html", eventi=eventi)
@@ -57,15 +58,13 @@ def index()
 # Route per aggiungere un evento
 @app.route("/aggiungi", methods=["POST"])
 def aggiungi_evento():
-    # Prendi i dati dal form
     titolo = request.form.get("titolo")
     data_inizio = request.form["data_inizio"]
     data_fine = request.form["data_fine"]
     luogo = request.form["luogo"]
     priorita = request.form["priorita"]
 
-     # Aggiungi l'evento
-    aggiungi_evento(titolo, data_inizio, data_fine, luogo, priorita)
+    salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita)
 
     # Ritorna alla pagina principale
     return redirect(url_for("index"))
