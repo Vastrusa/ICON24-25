@@ -12,6 +12,8 @@
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     
+      <link rel="stylesheet" href="style.css" />
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
@@ -24,7 +26,8 @@
                         title: "{{ evento['titolo'] }}",
                         start: "{{ evento['data_inizio'] }}",
                         end: "{{ evento['data_fine'] }}",
-                        priority: "{{ evento['priorita'] }}"
+                        color: "{{ 'red' if evento['priorita'] == 'Alta' else 'orange' if evento['priorita'] == 'Media' else 'green' }}",
+                        id: "{{ evento['titolo'] }}"
                     }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ],
@@ -55,6 +58,7 @@
                     dataInizio: "{{ evento['data_inizio'] }}",
                     dataFine: "{{ evento['data_fine'] }}",
                     priorita: "{{ evento['priorita'] }}"
+                    ricorrenza: "{{ evento['ricorrenza'] }}"
                 },
                 {% endfor %}
             ];
@@ -63,12 +67,23 @@
             let contenuto = "<h5>Eventi del " + data + ":</h5>";
 
             if (eventiFiltrati.length === 0) {
-                contenuto += "<p>Nessun evento</p>";
+                contenuto += "<p>Nessun evento in programma</p>";
             } else {
                 eventiFiltrati.forEach(evento => {
-                    contenuto += `<p><strong>${evento.titolo}</strong> (${evento.priorita})<br>
-                                  Inizio: ${evento.dataInizio} <br>
-                                  Fine: ${evento.dataFine}</p><hr>`;
+                  let inizio = evento.dataInizio.replace('T', ' ');
+                  let fine = evento.dataFine.replace('T', ' ');
+                  let priorita = "";
+                  if (evento.priorita === "Alta") {
+                      priorita = "Priorità alta";
+                  } else if (evento.priorita === "Media") {
+                      priorita = "Priorità media";
+                  } else {
+                      priorita = "Priorità bassa";
+                  }
+                  contenuto += `<p><strong>${evento.titolo}</strong> (${priorita})<br>
+                                      Inizio: ${inizio} <br>
+                                      Fine: ${fine} <br>
+                                      ${evento.ricorrenza !== 'no' ? 'Ricorrenza: ' + evento.ricorrenza + '<br>' : ''}</p><hr>`;
                 });
             }
 
@@ -122,6 +137,26 @@
                         <option value="Bassa">Bassa 🟢</option>
                     </select>
                 </div>
+                <div class="mb-3">
+                    <label for="ricorrenza" class="form-label">Ricorrenza:</label>
+                    <select name="ricorrenza" id="ricorrenza" class="form-control">
+                      <option value="no">No</option>
+                      <option value="giornaliera">Giornaliera</option>
+                      <option value="settimanale">Settimanale</option>
+                      <option value="mensile">Mensile</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="data_fine_ricorrenza" class="form-label"
+                      >Data Fine Ricorrenza:</label
+                    >
+                    <input
+                      type="datetime-local"
+                      name="data_fine_ricorrenza"
+                      id="data_fine_ricorrenza"
+                      class="form-control"
+                    />
+                  </div>
 
                 <button type="submit" class="btn btn-primary w-100">Aggiungi Evento</button>
             </form>
