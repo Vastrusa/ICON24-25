@@ -25,7 +25,7 @@
                         start: "{{ evento['data_inizio'] }}",
                         end: "{{ evento['data_fine'] }}",
                         priority: "{{ evento['priorita'] }}"
-                    },
+                    }{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ],
                 dateClick: function(info) {
