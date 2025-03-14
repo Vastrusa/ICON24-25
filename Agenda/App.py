@@ -131,7 +131,7 @@ def aggiungi_evento():
     data_fine = request.form["data_fine"]
     luogo = request.form["luogo"]
     priorita = request.form["priorita"]
-    ricorrenza = request.form["ricorrenza","nessuna"]
+    ricorrenza = request.form["ricorrenza"]
     data_fine_ricorrenza = request.form.get("data_fine_ricorrenza")
 
     salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita, ricorrenza, data_fine_ricorrenza)
