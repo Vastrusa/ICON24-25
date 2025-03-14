@@ -49,7 +49,8 @@ def aggiungi_evento(titolo, data_inizio, data_fine, luogo, priorita):
 
 # Route per la pagina principale
 @app.route("/")
-def index():
+def index()
+    eventi = carica_eventi()  
     # Passa gli eventi al template
     return render_template("index.html", eventi=eventi)
 
