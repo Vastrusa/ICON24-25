@@ -24,9 +24,10 @@
                         title: "{{ evento['titolo'] }}",
                         start: "{{ evento['data_inizio'] }}",
                         end: "{{ evento['data_fine'] }}",
+                        luogo: "{{ evento['luogo'] }}",
                         priority: "{{ evento['priorita'] }}",
-                        ricorrenza: "{{ evento['ricorrenza'] }}",  // Ricorrenza inclusa
-                        data_fine_ricorrenza: "{{ evento['data_fine_ricorrenza'] }}",  // Data fine ricorrenza inclusa
+                        ricorrenza: "{{ evento['ricorrenza'] }}",  
+                        data_fine_ricorrenza: "{{ evento['data_fine_ricorrenza'] }}",
                         id: "{{ evento['titolo'] }}",  // ID unico per identificare l'evento
                         color: "{{ 'red' if evento['priorita'] == 'Alta' else 'orange' if evento['priorita'] == 'Media' else 'green' }}"
                     }{% if not loop.last %},{% endif %}
@@ -58,25 +59,39 @@
                     titolo: "{{ evento['titolo'] }}",
                     dataInizio: "{{ evento['data_inizio'] }}",
                     dataFine: "{{ evento['data_fine'] }}",
+                    luogo: "{{ evento['luogo'] }}",
                     priorita: "{{ evento['priorita'] }}",
                     ricorrenza: "{{ evento['ricorrenza'] }}",
-                    data_fine_ricorrenza: "{{ evento['data_fine_ricorrenza'] }}"  // Data fine ricorrenza inclusa
+                    data_fine_ricorrenza: "{{ evento['data_fine_ricorrenza'] }}" 
                 },
                 {% endfor %}
             ];
 
             let eventiFiltrati = eventi.filter(evento => evento.dataInizio.startsWith(data));
-            let contenuto = "<h5>Eventi del " + data + ":</h5>";
+            let dataFormattata = new Date(data).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' });
+            let contenuto = "<h5>Eventi del ${dataFormattata}:</h5>";
 
             if (eventiFiltrati.length === 0) {
                 contenuto += "<p>Nessun evento</p>";
             } else {
                 eventiFiltrati.forEach(evento => {
-                    contenuto += `<p><strong>${evento.titolo}</strong> (${evento.priorita})<br>
-                                  Inizio: ${evento.dataInizio} <br>
-                                  Fine: ${evento.dataFine}<br>
-                                  Ricorrenza: ${evento.ricorrenza}<br>
-                                  Data fine ricorrenza: ${evento.data_fine_ricorrenza || 'Nessuna'}</p>
+                   //Formatta la data di inizio
+                  let dataInizio = new Date(evento.dataInizio);
+                  let dataInizioFormattata = dataInizio.toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+    
+                   //Formatta la data di fine
+                  let dataFine = new Date(evento.dataFine);
+                  let dataFineFormattata = dataFine.toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+    
+                  //Formatta la data di fine ricorrenza
+                  let dataFineRicorrenzaFormattata = evento.data_fine_ricorrenza ? new Date(evento.data_fine_ricorrenza).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Nessuna ricorrenza';
+    
+                  contenuto += `<p><strong>${evento.titolo}</strong> (Priorità ${evento.priorita})<br>
+                          Luogo: ${evento.luogo}<br>
+                          Inizio: ${dataInizioFormattata} <br>
+                          Fine: ${dataFineFormattata}<br>
+                          Ricorrenza: ${evento.ricorrenza}<br>
+                          Data fine ricorrenza: ${dataFineRicorrenzaFormattata}</p>
                                   <form method="post" action="/elimina" onsubmit="return confirm('Sei sicuro di voler eliminare l\'evento?');">
                                       <input type="hidden" name="titolo" value="${evento.titolo}">
                                       <button type="submit" class="btn btn-danger btn-sm">Elimina</button>
@@ -129,8 +144,8 @@
                 <div class="mb-3">
                     <label for="priorita" class="form-label">Priorità:</label>
                     <select name="priorita" id="priorita" class="form-control">
-                        <option value="Alta">Alta 🔴</option>
                         <option value="Media">Media 🟠</option>
+                        <option value="Alta">Alta 🔴</option>
                         <option value="Bassa">Bassa 🟢</option>
                     </select>
                 </div>
@@ -138,10 +153,11 @@
                 <div class="mb-3">
                     <label for="ricorrenza" class="form-label">Ricorrenza:</label>
                     <select name="ricorrenza" id="ricorrenza" class="form-control">
+                        <option value="nessuna">Nessuna</option>
                         <option value="giornaliera">Giornaliera</option>
                         <option value="settimanale">Settimanale</option>
                         <option value="mensile">Mensile</option>
-                        <option value="nessuna">Nessuna</option>
+                        
                     </select>
                 </div>
 
@@ -161,13 +177,13 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="eventModalLabel">Eventi</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> 
                 </div>
                 <div class="modal-body" id="modal-body">
                     <!-- Contenuto eventi qui -->
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
                 </div>
             </div>
         </div>
