@@ -1,36 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rdf:RDF
-   xmlns:ex="http://www.example.com#"
+   xmlns:ns1="http://example.org/"
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
 >
-  <rdf:Description rdf:about="http://www.example.com#dataFine">
-    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#DatatypeProperty"/>
-    <rdfs:domain rdf:resource="http://www.example.com#EventoRicorrente"/>
+  <rdf:Description rdf:about="http://www.example.org/agenda#ricorrenza">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+    <rdfs:label>Ricorrenza dell'evento</rdfs:label>
+    <rdfs:domain rdf:resource="http://www.example.org/agenda#Evento"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.org/pallavolo">
+    <rdf:type rdf:resource="http://example.org/Evento"/>
+    <ns1:titolo>pallavolo</ns1:titolo>
+    <ns1:data_inizio>2025-03-28T21:04</ns1:data_inizio>
+    <ns1:data_fine>2025-03-28T21:07</ns1:data_fine>
+    <ns1:luogo>bari</ns1:luogo>
+    <ns1:priorita>Alta</ns1:priorita>
+    <ns1:ricorrenza>mensile</ns1:ricorrenza>
+    <ns1:data_fine_ricorrenza>2025-08-08T16:01</ns1:data_fine_ricorrenza>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.org/pizza">
+    <rdf:type rdf:resource="http://example.org/Evento"/>
+    <ns1:titolo>pizza</ns1:titolo>
+    <ns1:data_inizio>2025-03-22T20:00</ns1:data_inizio>
+    <ns1:data_fine>2025-03-22T23:10</ns1:data_fine>
+    <ns1:luogo>pizzeria</ns1:luogo>
+    <ns1:priorita>Alta</ns1:priorita>
+    <ns1:ricorrenza>settimanale</ns1:ricorrenza>
+    <ns1:data_fine_ricorrenza>2025-04-30T00:05</ns1:data_fine_ricorrenza>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://example.org/conferenza">
+    <rdf:type rdf:resource="http://example.org/Evento"/>
+    <ns1:titolo>conferenza</ns1:titolo>
+    <ns1:data_inizio>2025-03-12T20:19</ns1:data_inizio>
+    <ns1:data_fine>2025-03-12T21:21</ns1:data_fine>
+    <ns1:luogo>Terlizzi</ns1:luogo>
+    <ns1:priorita>Bassa</ns1:priorita>
+    <ns1:ricorrenza>mensile</ns1:ricorrenza>
+    <ns1:data_fine_ricorrenza>2025-07-31T16:16</ns1:data_fine_ricorrenza>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.org/agenda#luogo">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+    <rdfs:label>Luogo dell'evento</rdfs:label>
+    <rdfs:domain rdf:resource="http://www.example.org/agenda#Evento"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.org/agenda#priorita">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+    <rdfs:label>Priorità dell'evento</rdfs:label>
+    <rdfs:domain rdf:resource="http://www.example.org/agenda#Evento"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.org/agenda#data_fine">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+    <rdfs:label>Data di fine</rdfs:label>
+    <rdfs:domain rdf:resource="http://www.example.org/agenda#Evento"/>
     <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com#haUtente">
-    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#ObjectProperty"/>
-    <rdfs:domain rdf:resource="http://www.example.com#EventoRicorrente"/>
-    <rdfs:range rdf:resource="http://www.example.com#Utente"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com#haOrario">
-    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#ObjectProperty"/>
-    <rdfs:domain rdf:resource="http://www.example.com#EventoRicorrente"/>
-    <rdfs:range rdf:resource="http://www.example.com#Orario"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com#haLuogo">
-    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#ObjectProperty"/>
-    <rdfs:domain rdf:resource="http://www.example.com#EventoRicorrente"/>
-    <rdfs:range rdf:resource="http://www.example.com#Luogo"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com#EventoRicorrente">
-    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class"/>
-    <rdfs:label>Evento Ricorrente</rdfs:label>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com#dataInizio">
-    <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#DatatypeProperty"/>
-    <rdfs:domain rdf:resource="http://www.example.com#EventoRicorrente"/>
+  <rdf:Description rdf:about="http://www.example.org/agenda#data_inizio">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+    <rdfs:label>Data di inizio</rdfs:label>
+    <rdfs:domain rdf:resource="http://www.example.org/agenda#Evento"/>
     <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.org/agenda#Evento">
+    <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+    <rdfs:label>Evento</rdfs:label>
+    <rdfs:comment>Classe che rappresenta un evento nell'agenda</rdfs:comment>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.org/agenda#data_fine_ricorrenza">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+    <rdfs:label>Data di fine della ricorrenza</rdfs:label>
+    <rdfs:domain rdf:resource="http://www.example.org/agenda#Evento"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.org/agenda#titolo">
+    <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+    <rdfs:label>Titolo dell'evento</rdfs:label>
+    <rdfs:domain rdf:resource="http://www.example.org/agenda#Evento"/>
+    <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
   </rdf:Description>
 </rdf:RDF>
+
