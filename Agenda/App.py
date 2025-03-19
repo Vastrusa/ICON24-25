@@ -1,50 +1,92 @@
 from flask import Flask, render_template, request, redirect, url_for
 from datetime import datetime, timedelta
-import json
+import rdflib
+from rdflib.namespace import RDF, RDFS, URIRef
 import os
 import calendar
 from dateutil.relativedelta import relativedelta
+import uuid
 
 app = Flask(__name__)
 
-#Percorso per il file JSON che contiene gli eventi
-EVENTI_FILE = "eventi.json"
+#Percorso per il file OWL che contiene gli eventi
+EVENTI_FILE = "Agenda.owl"
 
-#Funzione per caricare gli eventi dal file JSON
+#Funzione per caricare l'ontologia
 def carica_eventi():
-    if not os.path.exists(EVENTI_FILE):
-        return []
-    with open(EVENTI_FILE, "r") as file:
-        eventi = json.load(file)
+    g = rdflib.Graph()
+    g.parse(EVENTI_FILE, format='xml')
 
-        # Aggiungi un controllo per evitare errori nella conversione
-        for evento in eventi:
-            try:
-                # Prova a fare la conversione della data nel formato giusto
-                evento['data_inizio'] = datetime.strptime(evento['data_inizio'], "%Y-%m-%dT%H:%M")
-                evento['data_fine'] = datetime.strptime(evento['data_fine'], "%Y-%m-%dT%H:%M")
-            except ValueError:
-                # Se la conversione fallisce, lascia la data come stringa o logga l'errore
-                print(f"Errore nel formato della data per l'evento: {evento['titolo']}")
-                evento['data_inizio'] = evento.get('data_inizio', '')
-                evento['data_fine'] = evento.get('data_fine', '')
-                
-        eventi_espansi = []
-        for evento in eventi:
-            if 'ricorrenza' in evento and evento['ricorrenza'] != 'no' and evento.get('data_fine_ricorrenza'):
-                eventi_espansi.extend(genera_eventi_ricorrenti(evento))
-            else:
-                eventi_espansi.append(evento)
+    #Esegui una query SPARQL per ottenere gli eventi
+    query = """
+    SELECT ?titolo ?data_inizio ?data_fine ?luogo ?priorita ?ricorrenza ?data_fine_ricorrenza
+    WHERE {
+        ?evento rdf:type <http://example.org/Evento> . 
+        ?evento <http://example.org/titolo> ?titolo .
+        ?evento <http://example.org/data_inizio> ?data_inizio .
+        ?evento <http://example.org/data_fine> ?data_fine .
+        ?evento <http://example.org/luogo> ?luogo .
+        ?evento <http://example.org/priorita> ?priorita .
+        ?evento <http://example.org/ricorrenza> ?ricorrenza .
+        OPTIONAL { ?evento <http://example.org/data_fine_ricorrenza> ?data_fine_ricorrenza . }
+    }
+    """
+    risultati = g.query(query)
+    eventi = []
 
-        return eventi_espansi
-def genera_eventi_ricorrenti(evento):
+    for r in risultati:
+        evento = {
+            'titolo': str(r.titolo),
+            'data_inizio': str(r.data_inizio),
+            'data_fine': str(r.data_fine),
+            'luogo': str(r.luogo),
+            'priorita': str(r.priorita),
+            'ricorrenza': str(r.ricorrenza),
+            'data_fine_ricorrenza': str(r.data_fine_ricorrenza) if r.data_fine_ricorrenza else None
+        }
+        eventi.append(evento)
+
+        #Aggiungi gli eventi ricorrenti se ci sono
+        if r.ricorrenza:
+            eventi_ricorrenti = genera_eventi_ricorrenti(evento, g)
+            eventi.extend(eventi_ricorrenti)
+
+    return eventi
+
+#Funzione per aggiungere un nuovo evento nell'ontologia
+def salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita, ricorrenza, data_fine_ricorrenza):
+    g = rdflib.Graph()
+    g.parse(EVENTI_FILE, format='xml')
+    
+    evento_uri = URIRef(f"http://example.org/{titolo}")
+    evento = URIRef("http://example.org/Evento")
+    
+    # Aggiungi i dati dell'evento
+    g.add((evento_uri, RDF.type, evento))
+    g.add((evento_uri, URIRef("http://example.org/titolo"), rdflib.Literal(titolo)))
+    g.add((evento_uri, URIRef("http://example.org/data_inizio"), rdflib.Literal(data_inizio)))
+    g.add((evento_uri, URIRef("http://example.org/data_fine"), rdflib.Literal(data_fine)))
+    g.add((evento_uri, URIRef("http://example.org/luogo"), rdflib.Literal(luogo)))
+    g.add((evento_uri, URIRef("http://example.org/priorita"), rdflib.Literal(priorita)))
+    g.add((evento_uri, URIRef("http://example.org/ricorrenza"), rdflib.Literal(ricorrenza)))
+    g.add((evento_uri, URIRef("http://example.org/data_fine_ricorrenza"), rdflib.Literal(data_fine_ricorrenza)))  
+    if data_fine_ricorrenza:
+        g.add((evento_uri, URIRef("http://example.org/data_fine_ricorrenza"), rdflib.Literal(data_fine_ricorrenza)))
+    
+    #Salva l'ontologia aggiornata
+    g.serialize(EVENTI_FILE, format='xml')
+
+#Funzione per generare eventi ricorrenti e aggiungerli all'ontologia
+def genera_eventi_ricorrenti(evento, g):
     eventi_ricorrenti = []
-    data_inizio = evento['data_inizio']
-    data_fine = evento['data_fine']
+    #Otteniamo i dati dell'evento
+    data_inizio = datetime.strptime(evento['data_inizio'], "%Y-%m-%dT%H:%M")
+    data_fine = datetime.strptime(evento['data_fine'], "%Y-%m-%dT%H:%M")
     ricorrenza = evento['ricorrenza']
     data_fine_ricorrenza = datetime.strptime(evento['data_fine_ricorrenza'], "%Y-%m-%dT%H:%M")
     giorno_mese_iniziale = data_inizio.day
-
+    
+    #Ricorrenza Giornaliera
     if ricorrenza == 'giornaliera':
         i = 1
         while data_inizio + timedelta(days=i) <= data_fine_ricorrenza:
@@ -53,8 +95,21 @@ def genera_eventi_ricorrenti(evento):
             nuovo_evento = evento.copy()
             nuovo_evento['data_inizio'] = nuova_data_inizio.strftime("%Y-%m-%dT%H:%M")
             nuovo_evento['data_fine'] = nuova_data_fine.strftime("%Y-%m-%dT%H:%M")
+            
+            #Aggiungiamo l'evento ricorrente nell'ontologia
+            evento_uri = rdflib.URIRef(f"http://example.org/event/{nuovo_evento['titolo'].replace(' ', '_')}")
+            g.add((evento_uri, rdflib.RDF.type, rdflib.URIRef("http://example.org/Event")))
+            g.add((evento_uri, rdflib.URIRef("http://example.org/titolo"), rdflib.Literal(nuovo_evento['titolo'])))
+            g.add((evento_uri, rdflib.URIRef("http://example.org/data_inizio"), rdflib.Literal(nuovo_evento['data_inizio'])))
+            g.add((evento_uri, rdflib.URIRef("http://example.org/data_fine"), rdflib.Literal(nuovo_evento['data_fine'])))
+            g.add((evento_uri, rdflib.URIRef("http://example.org/luogo"), rdflib.Literal(nuovo_evento['luogo'])))
+            g.add((evento_uri, rdflib.URIRef("http://example.org/priorita"), rdflib.Literal(nuovo_evento['priorita'])))
+            g.add((evento_uri, rdflib.URIRef("http://example.org/ricorrenza"), rdflib.Literal(nuovo_evento['ricorrenza'])))
+
             eventi_ricorrenti.append(nuovo_evento)
             i += 1
+
+    #Ricorrenza Settimanale
     elif ricorrenza == 'settimanale':
         giorno_settimana_iniziale = data_inizio.weekday()
         i = 1
@@ -67,63 +122,74 @@ def genera_eventi_ricorrenti(evento):
                 nuovo_evento = evento.copy()
                 nuovo_evento['data_inizio'] = nuova_data_inizio.strftime("%Y-%m-%dT%H:%M")
                 nuovo_evento['data_fine'] = nuova_data_fine.strftime("%Y-%m-%dT%H:%M")
+                
+                #Aggiungiamo l'evento ricorrente nell'ontologia
+                evento_uri = rdflib.URIRef(f"http://example.org/event/{nuovo_evento['titolo'].replace(' ', '_')}")
+                g.add((evento_uri, rdflib.RDF.type, rdflib.URIRef("http://example.org/Event")))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/titolo"), rdflib.Literal(nuovo_evento['titolo'])))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/data_inizio"), rdflib.Literal(nuovo_evento['data_inizio'])))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/data_fine"), rdflib.Literal(nuovo_evento['data_fine'])))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/luogo"), rdflib.Literal(nuovo_evento['luogo'])))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/priorita"), rdflib.Literal(nuovo_evento['priorita'])))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/ricorrenza"), rdflib.Literal(nuovo_evento['ricorrenza'])))
+
                 eventi_ricorrenti.append(nuovo_evento)
             i += 1
+
+    #Ricorrenza Mensile
     elif ricorrenza == 'mensile':
-        nuova_data_inizio = data_inizio
-        nuova_data_fine = data_fine
-        while nuova_data_inizio <= data_fine_ricorrenza:
-            nuovo_evento = evento.copy()
-            nuovo_evento['data_inizio'] = nuova_data_inizio.strftime("%Y-%m-%dT%H:%M")
-            nuovo_evento['data_fine'] = nuova_data_fine.strftime("%Y-%m-%dT%H:%M")
-            eventi_ricorrenti.append(nuovo_evento)
+        i = 1
+        while data_inizio + relativedelta(months=i) <= data_fine_ricorrenza:
+            nuova_data_inizio = data_inizio + relativedelta(months=i)
+            nuova_data_fine = data_fine + relativedelta(months=i)
 
-            nuova_data_inizio += relativedelta(months=1)
-            nuova_data_fine += relativedelta(months=1)
+            if nuova_data_inizio <= data_fine_ricorrenza:
+                nuovo_evento = evento.copy()
+                nuovo_evento['data_inizio'] = nuova_data_inizio.strftime("%Y-%m-%dT%H:%M")
+                nuovo_evento['data_fine'] = nuova_data_fine.strftime("%Y-%m-%dT%H:%M")
 
-            try:
-                nuova_data_inizio = nuova_data_inizio.replace(day=giorno_mese_iniziale)
-                nuova_data_fine = nuova_data_fine.replace(day=giorno_mese_iniziale)
-            except ValueError:
-                nuova_data_inizio = nuova_data_inizio.replace(day=calendar.monthrange(nuova_data_inizio.year, nuova_data_inizio.month)[1])
-                nuova_data_fine = nuova_data_fine.replace(day=calendar.monthrange(nuova_data_fine.year, nuova_data_fine.month)[1])
+                #Genera un ID univoco per l'evento ricorrente
+                evento_id = str(uuid.uuid4())
+                evento_uri = rdflib.URIRef(f"http://example.org/event/{evento_id}")
+
+                #Aggiungiamo l'evento ricorrente nell'ontologia
+                g.add((evento_uri, rdflib.RDF.type, rdflib.URIRef("http://example.org/Event")))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/titolo"), rdflib.Literal(nuovo_evento['titolo'])))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/data_inizio"), rdflib.Literal(nuovo_evento['data_inizio'])))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/data_fine"), rdflib.Literal(nuovo_evento['data_fine'])))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/luogo"), rdflib.Literal(nuovo_evento['luogo'])))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/priorita"), rdflib.Literal(nuovo_evento['priorita'])))
+                g.add((evento_uri, rdflib.URIRef("http://example.org/ricorrenza"), rdflib.Literal(nuovo_evento['ricorrenza'])))
+
+                eventi_ricorrenti.append(nuovo_evento)
+            i += 1
 
     return eventi_ricorrenti
 
-# Funzione per salvare gli eventi nel file JSON
-def salva_eventi(eventi):
-    with open(EVENTI_FILE, "w") as file:
-        json.dump(eventi, file, default=str)
-
-# Funzione per salvare un nuovo evento
-def salva_nuovo_evento(titolo, data_inizio, data_fine, luogo, priorita, ricorrenza, data_fine_ricorrenza):
-    evento = {
-        'titolo': titolo,
-        'data_inizio': datetime.strptime(data_inizio, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M"),
-        'data_fine': datetime.strptime(data_fine, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M"),
-        'luogo': luogo,
-        'priorita': priorita,
-        'ricorrenza': ricorrenza,
-        'data_fine_ricorrenza': datetime.strptime(data_fine_ricorrenza, "%Y-%m-%dT%H:%M").strftime("%Y-%m-%dT%H:%M") if data_fine_ricorrenza else None        
-    }
-    eventi = carica_eventi()
-    eventi.append(evento)
-    salva_eventi(eventi)
-
-# Funzione per eliminare un evento
+  #Salva l'ontologia aggiornata
+    g.serialize(EVENTI_FILE, format='xml')
+    
+#Funzione per eliminare un evento dall'ontologia
 def elimina_evento(titolo):
-    eventi = carica_eventi()
-    eventi = [evento for evento in eventi if evento['titolo'] != titolo]
-    salva_eventi(eventi)
+    g = rdflib.Graph()
+    g.parse(EVENTI_FILE, format='xml')
+    
+    evento_uri = URIRef(f"http://example.org/{titolo}")
+    
+    #Rimuovi l'evento
+    g.remove((evento_uri, None, None))
+    
+    #Salva l'ontologia aggiornata
+    g.serialize(EVENTI_FILE, format='xml')
 
-# Route per la pagina principale
+#Route per la pagina principale
 @app.route("/")
 def index():
     eventi = carica_eventi()  
     # Passa gli eventi al template
     return render_template("index.html", eventi=eventi)
 
-# Route per aggiungere un evento
+#Route per aggiungere un evento
 @app.route("/aggiungi", methods=["POST"])
 def aggiungi_evento():
     titolo = request.form.get("titolo")
@@ -139,13 +205,13 @@ def aggiungi_evento():
     # Ritorna alla pagina principale
     return redirect(url_for("index"))
 
-# Route per eliminare un evento
+#Route per eliminare un evento
 @app.route("/elimina", methods=["POST"])
 def elimina():
     titolo = request.form.get("titolo")
     elimina_evento(titolo)
 
- # Ritorna alla pagina principale
+ #Ritorna alla pagina principale
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
